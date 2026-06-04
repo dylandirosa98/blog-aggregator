@@ -79,6 +79,27 @@ func handlerResetUser(s *state, cmd command) error {
 	return nil
 }
 
+func handlerGetUsers(s *state, cmd command) error {
+	if len(cmd.args) > 0 {
+		err := fmt.Errorf("error too many arguments: %v", cmd.args)
+		print(err.Error())
+		return err
+	}
+	users, err := s.db.GetUsers(context.Background())
+	if err != nil {
+		fmt.Printf("Error getting users: %v\n", err)
+		os.Exit(1)
+	}
+	for _, user := range users {
+		if user.Name == s.config.Current_user_name {
+			fmt.Printf("* %v (current)\n", user.Name)
+		} else {
+			fmt.Printf("* %v\n", user.Name)
+		}
+	}
+	return nil
+}
+
 type commands struct {
 	mapCommands map[string]func(*state, command) error
 }

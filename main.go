@@ -25,6 +25,7 @@ func main() {
 	theCommands.register("login", handlerLogin)
 	theCommands.register("register", handlerRegister)
 	theCommands.register("reset", handlerResetUser)
+	theCommands.register("users", handlerGetUsers)
 	if err != nil {
 		print(fmt.Errorf("error registering command: %v", err))
 	}
