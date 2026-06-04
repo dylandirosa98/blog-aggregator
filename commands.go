@@ -65,6 +65,20 @@ func handlerRegister(s *state, cmd command) error {
 	return nil
 }
 
+func handlerResetUser(s *state, cmd command) error {
+	if len(cmd.args) < 0 {
+		err := fmt.Errorf("error not enough arguments: %v", cmd.args)
+		print(err.Error())
+		return err
+	}
+	err := s.db.ResetUsers(context.Background())
+	if err != nil {
+		fmt.Printf("Error resetting users: %v\n", err)
+		os.Exit(1)
+	}
+	return nil
+}
+
 type commands struct {
 	mapCommands map[string]func(*state, command) error
 }

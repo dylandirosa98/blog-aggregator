@@ -24,6 +24,7 @@ func main() {
 	theCommands := &commands{mapCommands: make(map[string]func(*state, command) error)}
 	theCommands.register("login", handlerLogin)
 	theCommands.register("register", handlerRegister)
+	theCommands.register("reset", handlerResetUser)
 	if err != nil {
 		print(fmt.Errorf("error registering command: %v", err))
 	}
