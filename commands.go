@@ -1,13 +1,20 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"log"
+	"os"
+	"time"
 
 	"github.com/dylandirosa98/blog-aggregator/internal/config"
+	"github.com/dylandirosa98/blog-aggregator/internal/database"
+	"github.com/google/uuid"
 )
 
 type state struct {
 	config *config.Config
+	db     *database.Queries
 }
 type command struct {
 	name string
@@ -18,11 +25,43 @@ func handlerLogin(s *state, cmd command) error {
 	if len(cmd.args) < 1 {
 		return fmt.Errorf("error not enough arguments: %v", cmd.args)
 	}
-	err := s.config.SetUser(cmd.args[0])
+	_, err := s.db.GetUser(context.Background(), cmd.args[0])
+	if err != nil {
+		fmt.Printf("error getting user: %v", err)
+		os.Exit(1)
+	}
+	err = s.config.SetUser(cmd.args[0])
 	if err != nil {
 		return err
 	}
 	fmt.Printf("User has been set to: %v\n", cmd.args[0])
+	return nil
+}
+
+func handlerRegister(s *state, cmd command) error {
+	if len(cmd.args) < 1 {
+		err := fmt.Errorf("error not enough arguments: %v", cmd.args)
+		print(err.Error())
+		return err
+	}
+	name := cmd.args[0]
+	newContext := context.Background()
+	newUser, err := s.db.CreateUser(
+		newContext,
+		database.CreateUserParams{
+			ID:        uuid.New(),
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+			Name:      name,
+		},
+	)
+	if err != nil {
+		fmt.Printf("Error creating new user(possibly user already exists): %v\n", err)
+		os.Exit(1)
+	}
+	s.config.SetUser(name)
+	print("New user successfully created")
+	log.Printf("user: %+v\n", newUser)
 	return nil
 }
 

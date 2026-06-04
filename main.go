@@ -1,20 +1,29 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"os"
 
 	"github.com/dylandirosa98/blog-aggregator/internal/config"
+	"github.com/dylandirosa98/blog-aggregator/internal/database"
 )
+import _ "github.com/lib/pq"
 
 func main() {
 	con, err := config.Read()
 	if err != nil {
 		print(fmt.Errorf("error reading config file: %v", err))
 	}
-	theState := state{config: &con}
+	db, err := sql.Open("postgres", con.Db_url)
+	dbQueries := database.New(db)
+	theState := state{
+		config: &con,
+		db:     dbQueries,
+	}
 	theCommands := &commands{mapCommands: make(map[string]func(*state, command) error)}
 	theCommands.register("login", handlerLogin)
+	theCommands.register("register", handlerRegister)
 	if err != nil {
 		print(fmt.Errorf("error registering command: %v", err))
 	}
