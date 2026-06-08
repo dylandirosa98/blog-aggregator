@@ -4,7 +4,7 @@ CREATE TABLE feeds(
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL,
     name TEXT NOT NULL UNIQUE,
-    url TEXT NOT NULL,
+    url TEXT NOT NULL UNIQUE,
     user_id UUID NOT NULL,
     CONSTRAINT fk_user_id
         FOREIGN KEY (user_id)
@@ -13,4 +13,4 @@ CREATE TABLE feeds(
     );
 
 -- +goose Down
-DROP TABLE feeds
+DROP TABLE feeds;

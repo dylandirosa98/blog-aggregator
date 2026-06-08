@@ -29,6 +29,8 @@ func main() {
 	theCommands.register("agg", handlerAgg)
 	theCommands.register("addfeed", handlerAddFeed)
 	theCommands.register("feeds", handlerFeeds)
+	theCommands.register("follow", handlerFollow)
+	theCommands.register("following", handlerFollowing)
 	if err != nil {
 		print(fmt.Errorf("error registering command: %v", err))
 	}

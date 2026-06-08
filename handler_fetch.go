@@ -96,11 +96,27 @@ func handlerAddFeed(s *state, cmd command) error {
 		fmt.Printf("create feed failed: %v\n", err)
 		return err
 	}
+	feedFollowArg := database.CreateFeedFollowParams{
+		ID:        uuid.New(),
+		UserID:    userID,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		FeedID:    arg.ID,
+	}
+	_, err = s.db.CreateFeedFollow(context.Background(), feedFollowArg)
+	if err != nil {
+		fmt.Printf("create feed follow failed: %v\n", err)
+		os.Exit(1)
+	}
 	fmt.Printf("%+v\n", arg)
 	return nil
 }
 
 func handlerFeeds(s *state, cmd command) error {
+	if len(cmd.args) > 0 {
+		fmt.Printf("invalid arguments\n")
+		os.Exit(1)
+	}
 	feeds, err := s.db.GetFeeds(context.Background())
 	if err != nil {
 		fmt.Printf("get feeds failed: %v\n", err)
@@ -110,6 +126,53 @@ func handlerFeeds(s *state, cmd command) error {
 		fmt.Printf("Feed #%d: %v\n", i, feed.FeedName)
 		fmt.Printf("Url: %v\n", feed.Url)
 		fmt.Printf("User Name: %v\n", feed.UserName)
+	}
+	return nil
+}
+
+func handlerFollow(s *state, cmd command) error {
+	if len(cmd.args) < 1 {
+		fmt.Printf("invalid arguments\n")
+		os.Exit(1)
+	}
+	user, err := s.db.GetUser(context.Background(), s.config.Current_user_name)
+	if err != nil {
+		fmt.Printf("get current user failed: %v\n", err)
+		os.Exit(1)
+	}
+	feed, err := s.db.QueryFeed(context.Background(), cmd.args[0])
+	if err != nil {
+		fmt.Printf("get feed failed: %v\n", err)
+		os.Exit(1)
+	}
+	arg := database.CreateFeedFollowParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		UserID:    user.ID,
+		FeedID:    feed.ID,
+	}
+	_, err = s.db.CreateFeedFollow(context.Background(), arg)
+	if err != nil {
+		fmt.Printf("create feed follow failed: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Printf("Feed: %v\nUser: %v\n", feed.Name, cmd.name)
+	return nil
+}
+
+func handlerFollowing(s *state, cmd command) error {
+	if len(cmd.args) > 0 {
+		fmt.Printf("invalid arguments\n")
+		os.Exit(1)
+	}
+	feeds, err := s.db.GetFeedFollowsForUser(context.Background(), s.config.Current_user_name)
+	if err != nil {
+		fmt.Printf("get feed follows failed: %v\n", err)
+		os.Exit(1)
+	}
+	for i, _ := range feeds {
+		fmt.Printf("%v\n", feeds[i].Name)
 	}
 	return nil
 }
