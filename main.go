@@ -27,10 +27,11 @@ func main() {
 	theCommands.register("reset", handlerResetUser)
 	theCommands.register("users", handlerGetUsers)
 	theCommands.register("agg", handlerAgg)
-	theCommands.register("addfeed", handlerAddFeed)
+	theCommands.register("addfeed", middlewareLoggedIn(handlerAddFeed))
 	theCommands.register("feeds", handlerFeeds)
-	theCommands.register("follow", handlerFollow)
-	theCommands.register("following", handlerFollowing)
+	theCommands.register("follow", middlewareLoggedIn(handlerFollow))
+	theCommands.register("following", middlewareLoggedIn(handlerFollowing))
+	theCommands.register("unfollow", middlewareLoggedIn(handlerUnfollow))
 	if err != nil {
 		print(fmt.Errorf("error registering command: %v", err))
 	}

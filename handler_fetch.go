@@ -63,24 +63,31 @@ func fetchFeed(ctx context.Context, feedURL string) (*RSSFeed, error) {
 }
 
 func handlerAgg(s *state, cmd command) error {
-	feed, err := fetchFeed(context.Background(), "https://www.wagslane.dev/index.xml")
-	if err != nil {
-		fmt.Printf("fetch feed failed: %v\n", err)
-		return err
+	if len(cmd.args) < 1 {
+		fmt.Printf("invalid number of arguments: %d\n", len(cmd.args))
+		os.Exit(1)
 	}
-	fmt.Printf("%+v\n", *feed)
+	fmt.Printf("Collecting feeds every %s\n", cmd.args[0])
+	timeBetweenReqs, err := time.ParseDuration(cmd.args[0])
+	if err != nil {
+		fmt.Printf("invalid time between requests: %v\n", err)
+		os.Exit(1)
+	}
+	ticker := time.NewTicker(timeBetweenReqs)
+	for ; ; <-ticker.C {
+		err = scrapeFeeds(s)
+		if err != nil {
+			fmt.Printf("scrape feed failed: %v\n", err)
+			continue
+		}
+	}
 	return nil
 }
 
-func handlerAddFeed(s *state, cmd command) error {
+func handlerAddFeed(s *state, cmd command, currentUser database.User) error {
 	if len(cmd.args) < 2 {
 		fmt.Printf("invalid arguments\n")
 		os.Exit(1)
-	}
-	currentUser, err := s.db.GetUser(context.Background(), s.config.Current_user_name)
-	if err != nil {
-		fmt.Printf("get current user failed: %v\n", err)
-		return err
 	}
 	userID := currentUser.ID
 	arg := database.CreateFeedParams{
@@ -91,7 +98,7 @@ func handlerAddFeed(s *state, cmd command) error {
 		Url:       cmd.args[1],
 		UserID:    userID,
 	}
-	_, err = s.db.CreateFeed(context.Background(), arg)
+	_, err := s.db.CreateFeed(context.Background(), arg)
 	if err != nil {
 		fmt.Printf("create feed failed: %v\n", err)
 		return err
@@ -130,14 +137,9 @@ func handlerFeeds(s *state, cmd command) error {
 	return nil
 }
 
-func handlerFollow(s *state, cmd command) error {
+func handlerFollow(s *state, cmd command, user database.User) error {
 	if len(cmd.args) < 1 {
 		fmt.Printf("invalid arguments\n")
-		os.Exit(1)
-	}
-	user, err := s.db.GetUser(context.Background(), s.config.Current_user_name)
-	if err != nil {
-		fmt.Printf("get current user failed: %v\n", err)
 		os.Exit(1)
 	}
 	feed, err := s.db.QueryFeed(context.Background(), cmd.args[0])
@@ -161,12 +163,12 @@ func handlerFollow(s *state, cmd command) error {
 	return nil
 }
 
-func handlerFollowing(s *state, cmd command) error {
+func handlerFollowing(s *state, cmd command, user database.User) error {
 	if len(cmd.args) > 0 {
 		fmt.Printf("invalid arguments\n")
 		os.Exit(1)
 	}
-	feeds, err := s.db.GetFeedFollowsForUser(context.Background(), s.config.Current_user_name)
+	feeds, err := s.db.GetFeedFollowsForUser(context.Background(), user.Name)
 	if err != nil {
 		fmt.Printf("get feed follows failed: %v\n", err)
 		os.Exit(1)
@@ -174,5 +176,28 @@ func handlerFollowing(s *state, cmd command) error {
 	for i, _ := range feeds {
 		fmt.Printf("%v\n", feeds[i].Name)
 	}
+	return nil
+}
+
+func handlerUnfollow(s *state, cmd command, user database.User) error {
+	if len(cmd.args) < 1 {
+		fmt.Printf("invalid arguments\n")
+		os.Exit(1)
+	}
+	feed, err := s.db.QueryFeed(context.Background(), cmd.args[0])
+	if err != nil {
+		fmt.Printf("get feed failed: %v\n", err)
+		os.Exit(1)
+	}
+	arg := database.UnfollowParams{
+		UserID: user.ID,
+		FeedID: feed.ID,
+	}
+	err = s.db.Unfollow(context.Background(), arg)
+	if err != nil {
+		fmt.Printf("unfollow failed: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Printf("You have unfollowed %v\n", feed.Name)
 	return nil
 }
