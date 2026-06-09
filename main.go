@@ -32,6 +32,7 @@ func main() {
 	theCommands.register("follow", middlewareLoggedIn(handlerFollow))
 	theCommands.register("following", middlewareLoggedIn(handlerFollowing))
 	theCommands.register("unfollow", middlewareLoggedIn(handlerUnfollow))
+	theCommands.register("browse", middlewareLoggedIn(handlerBrowse))
 	if err != nil {
 		print(fmt.Errorf("error registering command: %v", err))
 	}
